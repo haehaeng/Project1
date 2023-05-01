@@ -84,6 +84,19 @@ void Board::print_job(int job_idx, char job_type, int id) {
 
 
 void Board::insert_page(int x, int y, int width, int height, int id, int content) {
+    //겹치는 지 체크?
+    for (int current_x=x; current_x<x+width; current_x++)
+    {
+        for (int current_y=y; current_y<y+height; current_y++)
+        {
+            if (board[current_y * this->height + current_x] != ' ') 
+            {
+                // 아래에 깔려 있는 board를 체크해야 함.
+                
+            }        
+            board[current_y * this->height + current_x] = (char)content;
+        }
+    }
 
 }
 
