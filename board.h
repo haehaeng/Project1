@@ -22,7 +22,8 @@ class Board {
     private:
         int num_jobs, width, height; 
         ofstream& output; 
-        char* board; 
+        char* board;
+        char** history;
 };
 
 
@@ -37,6 +38,13 @@ Board::Board(int num_jobs, int width, int height, ofstream& output_stream): outp
         for (int w = 0; w < width; w++) {
             board[h*width + w] = ' ';
         }
+    // 보드 위 블록의 변화를 기록할 char** pointer history
+    history = new char*[width*height];
+    for (int h = 0; h < height; h++) {
+        for (int w = 0; w < width; w++) {
+
+        }
+    }
     }
 
 }
