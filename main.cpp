@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-
+#include <vector> //vector 사용을 위해
 #include "board.h"
 
 using namespace std;
