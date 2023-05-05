@@ -17,7 +17,7 @@ class Page {
         char getcontent(){return content;}
         
         void abovepage(Page above_page);
-    
+        bool is_above(Page newpg);
 
     private:
         int x, y; // position of the page on the board
@@ -32,4 +32,32 @@ class Page {
     Page::Page(int x, int y, int width, int height, int id, int content):x(x),y(y),width(width),height(height), id(id), content((char)content){}
     void Page::abovepage(Page above_page){
         this->above.push_back(above_page);
+    }
+    bool Page::is_above(Page newpg){
+        // check vertices of newpage is pasted over existing page.
+        if( x <= newpg.getX() && newpg.getX() < x+width)
+            {if(y<=newpg.getY() && newpg.getY()<y+height)
+                {
+                    return 1;
+                }
+            }
+        if( x <= newpg.getX()+newpg.getwidth() && newpg.getX()+newpg.getwidth() < x+width)
+            {if(y<=newpg.getY() && newpg.getY()<y+height)
+                {
+                    return 1;
+                }
+            }
+        if( x <= newpg.getX() && newpg.getX() < x+width)
+            {if(y<=newpg.getY()+newpg.getheight() && newpg.getY()+newpg.getheight()<y+height)
+                {
+                    return 1;
+                }
+            }
+        if( x <= newpg.getX()+newpg.getwidth() && newpg.getX()+newpg.getwidth() < x+width)
+            {if(y<=newpg.getY()+newpg.getheight() && newpg.getY()+newpg.getheight()<y+height)
+                {
+                    return 1;
+                }
+            }
+        return 0;
     }
