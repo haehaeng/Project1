@@ -20,8 +20,8 @@ class Board {
         void modify_content(int id, char content);
         void modify_position(int id, int x, int y);
         void remove_pages(int id); // argument: page wanted. Get rid of pages above discussed page.
+        void return_pages();
         void insert_only(Page inserted);
-
     private:
         int num_jobs, width, height, insert_count=0 ;
         ofstream& output; 
@@ -125,31 +125,33 @@ void Board::insert_page(int x, int y, int width, int height, int id, int content
 }
 
 void Board::delete_page(int id) {
-    int i = 0;
-    while( pagetrack[i].getid() != id){
-        i++;
-    }
-    
-    print_board();
+    remove_pages(id);
+    return_pages();
 }
 
 void Board::modify_content(int id, char content) {
+    remove_pages(id);
     int i = 0;
     while( pagetrack[i].getid() != id){
         i++;
     }
     pagetrack[i].setcontent((int)content);
-
+    insert_only(pagetrack[i]);
+    print_board();
+    return_pages();
 }
 
 void Board::modify_position(int id, int x, int y) {
+    remove_pages(id);
     int i = 0;
     while( pagetrack[i].getid() != id){
         i++;
     }
     pagetrack[i].setX(pagetrack[i].getX()+x);
     pagetrack[i].setX(pagetrack[i].getY()+y);
-
+    insert_only(pagetrack[i]);
+    print_board();
+    return_pages();    
     
 }
 
@@ -194,6 +196,25 @@ void Board::remove_pages(int id){
     }
 }
 
+void Board::return_pages(){
+    int id;
+    turn_back.pop_back(); // return_pages()함수가 call될 때 turn_back vector의 맨 뒷 값은 지워져야 할 page이므로 먼저 지운다.
+    while(!turn_back.empty()) // 복구해야 될 page가 남아있다면
+    {
+        id = turn_back.back(); // 맨 뒤에서부터 id를 받아와
+        turn_back.pop_back(); // 물론 받아온 다음엔 지우고
+        { // target id를 가진 page를 pagetrack 내에서 찾는다. output -> index int.
+        int target = 0;
+            for(; target <insert_count; target++){
+                if (pagetrack[target].getid() == id){
+                break;
+                }
+            }
+        insert_only(pagetrack[target]); // 찾아낸 page를 board에 출력한다.
+        print_board(); // board에 변경사항이 생겼으므로 board를 출력한다.
+    }
+    }
+}
 
 void Board::insert_only(Page inserted){
 
