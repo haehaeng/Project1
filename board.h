@@ -25,7 +25,7 @@ class Board {
         void return_pages();
         void insert_only(Page inserted); // reflect page(input) onto board. (Not printing board.)
     private:
-        int num_jobs, width, height, insert_count=0 ;
+        int num_jobs, width, height, insert_count ;
         ofstream& output; 
         char* board;
         //extra member for implementing job functions
@@ -49,7 +49,7 @@ Board::Board(int num_jobs, int width, int height, ofstream& output_stream): outp
     }
     // initailizing pagetrack pointer, page track can save informaion of inserting pages.
     pagetrack = new Page[num_jobs];
-    
+    insert_count = 1;
 }
 
 Board::~Board(){
@@ -95,7 +95,8 @@ void Board::print_job(int job_idx, char job_type, int id) {
     
 void Board::insert_page(int x, int y, int width, int height, int id, int content) {
     //tracking insert_call
-    while(pagetrack[insert_count].getid() != -1 ){ //insert된 page들을 기록.
+
+    while(pagetrack[insert_count-1].getid() != -1 ){ //insert된 page들을 기록.
         insert_count++;
     }
     pagetrack[insert_count-1] = Page(x, y, width, height, id, content);
@@ -106,7 +107,6 @@ void Board::insert_page(int x, int y, int width, int height, int id, int content
     {
         for (int current_y=y; current_y<y+height; current_y++)
         {   // insert 하려는 board 위의 각 좌표에 대해
-
             if (board[current_y*this->width + current_x] != ' ') // content를 update하기 전에 이미 값이 있었다면
             {
                 for(int p=0; p<insert_count; p++)
@@ -124,12 +124,20 @@ void Board::insert_page(int x, int y, int width, int height, int id, int content
         }
     }
     print_board();
-    std::cout<<"hello"<<std::endl;
 }
 
 void Board::delete_page(int id) {
     remove_pages(id);
+    int target=0;
+    for(; target<insert_count; target++){
+        if (pagetrack[target].getid() == id){
+            break;
+        }
+    }
+    pagetrack[target] = Page();
     return_pages();
+    //page가 delete 됐으므로 Pagetrack에 들어있는 해당 page가 무용지물이 되게 조치해야 함.
+    // 그렇지 않으면 이후 동작에서 출력되어버림.
 }
 
 void Board::modify_content(int id, char content) {
@@ -150,11 +158,12 @@ void Board::modify_position(int id, int x, int y) {
     while( pagetrack[i].getid() != id){
         i++;
     }
-    pagetrack[i].setX(pagetrack[i].getX()+x);
-    pagetrack[i].setX(pagetrack[i].getY()+y);
+    pagetrack[i].setX(x);
+    pagetrack[i].setY(y);
     insert_only(pagetrack[i]);
     print_board();
-    return_pages();    
+    return_pages();
+    //position 바뀔 때 각 Page class의 above vector 의 update 필요    
     
 }
 
@@ -183,15 +192,19 @@ void Board::remove_pages(int id){
         }
     }
 
-    // 해당 page 위의 page가 아니지만, 해당 page가 insert 된 후에 insert된 경우
+    
     auto iter = find(turn_back.begin(), turn_back.end(), id);
     if(iter == turn_back.end())
     {   
         turn_back.push_back(id); // 지워진 page의 id를 turn_back vetor의 맨 뒤로 push
-        board = pagetrack[0].getboard(); // 빈 board 호출
+        for (int h = 0; h < height; h++) {
+            for (int w = 0; w < width; w++) {
+            board[h*width + w] = ' ';
+            }
+        } // 빈 board 호출
         for(int i=0; i<insert_count; i++){
             iter = find(turn_back.begin(), turn_back.end(),pagetrack[i].getid());
-            if(iter == turn_back.end()){
+            if(iter == turn_back.end()&&pagetrack[i].getid()!=-1){
                  insert_only(pagetrack[i]);
             }
         }
@@ -214,7 +227,8 @@ void Board::return_pages(){
                 }
             }
         insert_only(pagetrack[target]); // 찾아낸 page를 board에 출력한다.
-        print_board(); // board에 변경사항이 생겼으므로 board를 출력한다.
+        print_board();
+        // board에 변경사항이 생겼으므로 board를 출력한다.
     }
     }
 }
