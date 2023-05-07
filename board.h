@@ -19,15 +19,18 @@ class Board {
         void delete_page(int id);
         void modify_content(int id, char content);
         void modify_position(int id, int x, int y);
+        
+        //extra functions for implementing job functinons
         void remove_pages(int id); // argument: page wanted. Get rid of pages above discussed page.
         void return_pages();
-        void insert_only(Page inserted);
+        void insert_only(Page inserted); // reflect page(input) onto board. (Not printing board.)
     private:
         int num_jobs, width, height, insert_count=0 ;
         ofstream& output; 
         char* board;
-        Page* pagetrack;
-        std::vector<int> turn_back;
+        //extra member for implementing job functions
+        Page* pagetrack; // track of all pages inserted. Saving page size, position, id, index each.
+        std::vector<int> turn_back; // track of pages that sould be posted back.
 
 };
 
@@ -90,7 +93,6 @@ void Board::print_job(int job_idx, char job_type, int id) {
     output << id << endl;
 }
     
-
 void Board::insert_page(int x, int y, int width, int height, int id, int content) {
     //tracking insert_call
     while(pagetrack[insert_count].getid() != -1 ){ //insert된 page들을 기록.
@@ -122,6 +124,7 @@ void Board::insert_page(int x, int y, int width, int height, int id, int content
         }
     }
     print_board();
+    std::cout<<"hello"<<std::endl;
 }
 
 void Board::delete_page(int id) {
@@ -222,7 +225,7 @@ void Board::insert_only(Page inserted){
     {
         for (int current_y = inserted.getY(); current_y < inserted.getY()+inserted.getheight(); current_y++)
         {
-        board[current_y * this->width + current_x] = inserted.getcontent();
+            board[current_y * this->width + current_x] = inserted.getcontent();
         }
     }    //just print Page on board. 
 }
