@@ -15,22 +15,25 @@ class Page {
         int getid(){return id;}
         void setcontent(int content){this->content = content;}
         char getcontent(){return content;}
-        
-        void abovepage(Page above_page);
+        void setboard(char* board){this->board = board;}
+        char* getboard(){return board;}
+        std::vector<int> getabove(){return above;}
+
+        void abovepage(int above_page);
         bool is_above(Page newpg);
+        
 
     private:
         int x, y; // position of the page on the board
         int width, height; // width and height of the page 
         int id=-1; // unique id for each page
         char content;
-        std::vector<Page> above; // 위에 있는 page를 저장할 vector insert 되는 순서대로 push_back된다.
-
-
+        std::vector<int> above; // 위에 있는 page id를 저장할 vector insert 되는 순서대로 push_back된다.
+        char*board;
 };
     Page::Page(){}    
     Page::Page(int x, int y, int width, int height, int id, int content):x(x),y(y),width(width),height(height), id(id), content((char)content){}
-    void Page::abovepage(Page above_page){
+    void Page::abovepage(int above_page){
         this->above.push_back(above_page);
     }
     bool Page::is_above(Page newpg){
