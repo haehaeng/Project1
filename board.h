@@ -29,7 +29,7 @@ class Board {
         ofstream& output; 
         char* board;
         //extra member for implementing job functions
-        Page* pagetrack; // track of all pages inserted. Saving page size, position, id, index each.
+        std::vector<Page> pagetrack; // track of all pages inserted. Saving page size, position, id, index each.
         std::vector<int> turn_back; // track of pages that sould be posted back.
 
 };
@@ -48,7 +48,6 @@ Board::Board(int num_jobs, int width, int height, ofstream& output_stream): outp
         }
     }
     // initailizing pagetrack pointer, page track can save informaion of inserting pages.
-    pagetrack = new Page[num_jobs];
     insert_count = 1;
 }
 
@@ -95,32 +94,28 @@ void Board::print_job(int job_idx, char job_type, int id) {
     
 void Board::insert_page(int x, int y, int width, int height, int id, int content) {
     //tracking insert_call
-
-    while(pagetrack[insert_count-1].getid() != -1 ){ //insert된 page들을 기록.
-        insert_count++;
-    }
-    pagetrack[insert_count-1] = Page(x, y, width, height, id, content);
+    insert_count++;
+    pagetrack.push_back(Page(x,y,width, height, id, content));
     pagetrack[insert_count-1].setboard(board); //insert 전 상태의 board를 기록.
 
+    for(int p=0; p<insert_count-1; p++)
+    {
+        if(pagetrack[p].getid() > -1)
+        {
+        if(pagetrack[p].is_above(pagetrack[insert_count-1])) // 지금까지 insert된 page를 모두 찾아와 insert 하려는 page와 겹치는지 확인
+        {
+            pagetrack[p].abovepage(id);   // 겹친다면 아래에 있는 page의 above 벡터에 insert된 page id를 push_back()
+            pagetrack[p].sort_above();
+            
+        }
+        }    
+    }
     //changing the board content
     for (int current_x=x; current_x<x+width; current_x++)
     {
         for (int current_y=y; current_y<y+height; current_y++)
         {   // insert 하려는 board 위의 각 좌표에 대해
-            if (board[current_y*this->width + current_x] != ' ') // content를 update하기 전에 이미 값이 있었다면
-            {
-                for(int p=0; p<insert_count; p++)
-                {
-                    if(pagetrack[p].is_above(pagetrack[insert_count])) // 지금까지 insert된 page를 모두 찾아와 insert 하려는 page와 겹치는지 확인
-                    {
-                        pagetrack[p].abovepage(pagetrack[insert_count].getid());   // 겹친다면 아래에 있는 page의 above 벡터에 insert된 page id를 push_back()
-                        sort(pagetrack[p].getabove().begin(), pagetrack[p].getabove().end());
-                    }
-                    
-                }
-            }
-            board[current_y * this->width + current_x] = (char)content; // 모두 기록한 뒤 insert 진행
-            
+            board[current_y * this->width + current_x] = (char)content; // 모두 기록한 뒤 insert 진행    
         }
     }
     print_board();
@@ -128,19 +123,21 @@ void Board::insert_page(int x, int y, int width, int height, int id, int content
 
 void Board::delete_page(int id) {
     remove_pages(id);
+    
     int target=0;
     for(; target<insert_count; target++){
         if (pagetrack[target].getid() == id){
             break;
         }
     }
-    pagetrack[target] = Page();
+    pagetrack[target].setid(-1);
     return_pages();
     //page가 delete 됐으므로 Pagetrack에 들어있는 해당 page가 무용지물이 되게 조치해야 함.
     // 그렇지 않으면 이후 동작에서 출력되어버림.
 }
 
 void Board::modify_content(int id, char content) {
+    
     remove_pages(id);
     int i = 0;
     while( pagetrack[i].getid() != id){
@@ -160,10 +157,45 @@ void Board::modify_position(int id, int x, int y) {
     }
     pagetrack[i].setX(x);
     pagetrack[i].setY(y);
+    //abovepage updat3e
+    for(int p=0; p<insert_count-1; p++)
+    {    
+        pagetrack[p].empty_above(); // 원래 위에 있던 걸 다 비우고
+        for(int x = p+1; x < insert_count; x++) // 지금까지 insert된 page를 모두 찾아와 insert 하려는 page와 겹치는지 확인
+        {   if(pagetrack[x].getid()>-1 && pagetrack[p].is_above(pagetrack[x]))
+            {
+                pagetrack[p].abovepage(pagetrack[x].getid());   // 겹친다면 아래에 있는 page의 above 벡터에 insert된 page id를 push_back()
+                pagetrack[p].sort_above();
+            }
+        }    
+    }
+    //pagetrack[i] -> target page
+    //insertion이 새로 일어났다고 생각
+    //pagetrack의 순서를 바꿔야 함. pagetrack[i]와 그 위에 있는 page들이 맨 뒤로 가게끔
+    // Page vector afterward에 turn_back에 저장된 page id의 page를 역순으로 저장.
+    std::vector<Page> afterward;
+    int size_of_turn_back = turn_back.size();
+    for(int aft = size_of_turn_back-1 ; aft >= 0 ; aft--)
+    {
+        for (int sec = 0 ; sec < pagetrack.size() ; sec++)
+        {
+            if(pagetrack[sec].getid() == turn_back[aft])
+            {
+                afterward.push_back(pagetrack[sec]);
+                pagetrack.erase(pagetrack.begin()+sec);
+            }
+        }
+    }
+    pagetrack.insert(pagetrack.begin(),afterward.begin(),afterward.end());
+    
+    
+
     insert_only(pagetrack[i]);
     print_board();
     return_pages();
     //position 바뀔 때 각 Page class의 above vector 의 update 필요    
+    //아예 새로운 insertion이라고 생각하자 다만, 즉 input id를 가지는 page는 pagetrack 내에서 remove된 page를 제외한 stack에서 맨 뒤
+
     
 }
 
@@ -183,15 +215,16 @@ void Board::remove_pages(int id){
     // target page 위의 page들을 제거하자.
     if(!pagetrack[target].getabove().empty())
     {
-        std::vector<int>::iterator it;
-        for(it = pagetrack[target].getabove().begin(); it < pagetrack[target].getabove().end(); it++)
+        
+        for(int i_above = 0; i_above < pagetrack[target].getabove().size(); i_above++)
         {
-            remove_pages(*it);
+            if(pagetrack[target].getabove()[i_above] > -1)
+            {   
+            remove_pages(pagetrack[target].getabove()[i_above]);
             // 위의 모든 page들을 remove_pages
-            // above page 위에 또 above page가 있다면 중복이 발생할 수 있다!
+            }
         }
     }
-
     
     auto iter = find(turn_back.begin(), turn_back.end(), id);
     if(iter == turn_back.end())
