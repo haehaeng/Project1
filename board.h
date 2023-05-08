@@ -29,7 +29,7 @@ class Board {
         ofstream& output; 
         char* board;
         //extra member for implementing job functions
-        std::vector<Page> pagetrack; // track of all pages inserted. Saving page size, position, id, index each.
+        Page* pagetrack; // track of all pages inserted. Saving page size, position, id, index each.
         std::vector<int> turn_back; // track of pages that sould be posted back.
 
 };
@@ -48,6 +48,7 @@ Board::Board(int num_jobs, int width, int height, ofstream& output_stream): outp
         }
     }
     // initailizing pagetrack pointer, page track can save informaion of inserting pages.
+    pagetrack = new Page[num_jobs];
     insert_count = 1;
 }
 
@@ -95,7 +96,7 @@ void Board::print_job(int job_idx, char job_type, int id) {
 void Board::insert_page(int x, int y, int width, int height, int id, int content) {
     //tracking insert_call
     insert_count++;
-    pagetrack.push_back(Page(x,y,width, height, id, content));
+    pagetrack[insert_count-1] = (Page(x,y,width, height, id, content));
     pagetrack[insert_count-1].setboard(board); //insert 전 상태의 board를 기록.
 
     for(int p=0; p<insert_count-1; p++)
@@ -173,6 +174,7 @@ void Board::modify_position(int id, int x, int y) {
     //insertion이 새로 일어났다고 생각
     //pagetrack의 순서를 바꿔야 함. pagetrack[i]와 그 위에 있는 page들이 맨 뒤로 가게끔
     // Page vector afterward에 turn_back에 저장된 page id의 page를 역순으로 저장.
+   /*
     std::vector<Page> afterward;
     int size_of_turn_back = turn_back.size();
     for(int aft = size_of_turn_back-1 ; aft >= 0 ; aft--)
@@ -187,7 +189,7 @@ void Board::modify_position(int id, int x, int y) {
         }
     }
     pagetrack.insert(pagetrack.begin(),afterward.begin(),afterward.end());
-    
+    */
     
 
     insert_only(pagetrack[i]);
